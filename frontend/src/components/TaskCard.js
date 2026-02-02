@@ -1,7 +1,7 @@
 import React from 'react';
 import './TaskCard.css';
 
-function TaskCard({ task }) {
+function TaskCard({ task, taskMap }) {
   const getPriorityColor = (priority) => {
     if (priority === 1) return '#ef4444';
     if (priority === 2) return '#f59e0b';
@@ -53,7 +53,7 @@ function TaskCard({ task }) {
                 return a.localeCompare(b);
               })
               .map((depId, index) => {
-                const depTask = task._allTasks?.find((t) => t.id === depId);
+                const depTask = taskMap?.get(depId);
                 const displayText = depTask
                   ? `${depId}: ${depTask.title}`
                   : depId;

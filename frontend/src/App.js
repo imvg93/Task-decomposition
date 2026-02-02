@@ -226,12 +226,17 @@ function App() {
                 <div className="card">
                   <h2>Generated Tasks ({result.tasks.length})</h2>
                   <div className="tasks-grid">
-                    {result.tasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={{ ...task, _allTasks: result.tasks }}
-                      />
-                    ))}
+                    {(() => {
+                      // Create taskMap once for all tasks
+                      const taskMap = new Map(result.tasks.map(t => [t.id, t]));
+                      return result.tasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          taskMap={taskMap}
+                        />
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
