@@ -1,0 +1,19 @@
+{
+  "name": "task-decomposition-engine",
+  "version": "1.0.0",
+  "description": "AI-Powered Task Decomposition Engine",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "cd backend && npm run dev"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.5"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
