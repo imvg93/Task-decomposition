@@ -72,17 +72,45 @@ router.post('/decompose', (req, res) => {
     console.log('[API /decompose] Description:', description);
     console.log('[API /decompose] Constraints:', constraints);
 
-    const decompositionService = new DecompositionService();
-    const result = decompositionService.decompose(description, constraints);
+    let decompositionService;
+    try {
+      decompositionService = new DecompositionService();
+    } catch (serviceError) {
+      console.error('[API /decompose] Error creating DecompositionService:', serviceError);
+      return res.status(500).json({
+        error: {
+          message: 'Failed to initialize decomposition service',
+          details: serviceError.message,
+          stack: process.env.NODE_ENV === 'development' ? serviceError.stack : undefined,
+        },
+      });
+    }
+
+    let result;
+    try {
+      result = decompositionService.decompose(description, constraints);
+    } catch (decomposeError) {
+      console.error('[API /decompose] Error during decomposition:', decomposeError);
+      console.error('[API /decompose] Error stack:', decomposeError.stack);
+      return res.status(500).json({
+        error: {
+          message: 'Internal server error during task decomposition',
+          details: decomposeError.message,
+          stack: process.env.NODE_ENV === 'development' ? decomposeError.stack : undefined,
+        },
+      });
+    }
 
     console.log('[API /decompose] Decomposition completed successfully');
     return res.status(200).json(result);
   } catch (error) {
-    console.error('[API /decompose] Error during decomposition:', error);
+    console.error('[API /decompose] Unexpected error:', error);
+    console.error('[API /decompose] Error stack:', error.stack);
     return res.status(500).json({
       error: {
         message: 'Internal server error during task decomposition',
         details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
     });
   }

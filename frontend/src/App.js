@@ -26,17 +26,59 @@ function App() {
     setResult(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/decompose', {
+      // Determine API URL based on environment
+      // In development, use localhost:5000, in production use relative path
+      let apiUrl;
+      if (process.env.REACT_APP_API_URL) {
+        apiUrl = process.env.REACT_APP_API_URL;
+      } else if (process.env.NODE_ENV === 'development') {
+        apiUrl = 'http://localhost:5000/api';
+      } else {
+        apiUrl = '/api';
+      }
+      
+      console.log('Making request to:', `${apiUrl}/decompose`);
+      console.log('Request payload:', { description, constraints });
+      
+      const response = await axios.post(`${apiUrl}/decompose`, {
         description,
         constraints,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000, // 30 second timeout
       });
-      setResult(response.data);
+      
+      console.log('Response received:', response.data);
+      
+      if (response.data && response.data.tasks) {
+        setResult(response.data);
+      } else {
+        throw new Error('Invalid response format from server');
+      }
     } catch (err) {
-      setError(
-        err.response?.data?.error?.message ||
-        err.message ||
-        'Failed to decompose project. Please check if the backend server is running.'
-      );
+      console.error('Decomposition error:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      let errorMessage = 'Failed to decompose project. ';
+      
+      if (err.response) {
+        // Server responded with error
+        errorMessage += err.response.data?.error?.message || 
+                       err.response.data?.error?.details ||
+                       err.response.data?.message ||
+                       `Server error (${err.response.status})`;
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage += 'No response from server. Please check if the backend is running.';
+      } else {
+        // Error setting up request
+        errorMessage += err.message || 'Unknown error occurred.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

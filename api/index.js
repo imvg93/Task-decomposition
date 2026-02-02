@@ -3,29 +3,90 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const apiRoutes = require('../backend/routes/api');
 
 // Load environment variables
-dotenv.config();
+// In Vercel, env vars are set in dashboard, but we try to load .env for local dev
+try {
+  dotenv.config({ path: path.resolve(__dirname, '../backend/.env') });
+} catch (err) {
+  console.warn('Could not load .env file (this is normal in Vercel):', err.message);
+}
+
+let apiRoutes;
+try {
+  apiRoutes = require('../backend/routes/api');
+} catch (err) {
+  console.error('Failed to load API routes:', err);
+  throw err;
+}
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins (you can restrict this in production)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Task Decomposition API is running' });
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
 });
 
-// Favicon handler to prevent browser 404 logs
-app.get('/favicon.ico', (req, res) => {
-  res.status(204).end();
+// Health check endpoint (accessible at /api/health, but function receives /health)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'Task Decomposition API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint to verify services are loaded (accessible at /api/test, but function receives /test)
+app.get('/test', (req, res) => {
+  try {
+    const DecompositionService = require('../backend/services/decompositionService');
+    const DependencyService = require('../backend/services/dependencyService');
+    const { PATTERNS } = require('../backend/utils/patternLibrary');
+    
+    res.status(200).json({
+      status: 'ok',
+      message: 'All services loaded successfully',
+      services: {
+        DecompositionService: typeof DecompositionService === 'function' ? 'loaded' : 'failed',
+        DependencyService: typeof DependencyService === 'function' ? 'loaded' : 'failed',
+        Patterns: Array.isArray(PATTERNS) ? `loaded (${PATTERNS.length} patterns)` : 'failed'
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to load services',
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  }
 });
 
 // API routes
-app.use('/api', apiRoutes);
+// When Vercel routes /api/* to this function, it strips the /api prefix
+// So /api/decompose becomes /decompose in the function
+// Mount at root to match the stripped path
+app.use('/', apiRoutes);
+
+// 404 handler for unknown routes
+app.use((req, res) => {
+  console.log(`[404] Route not found: ${req.method} ${req.path}`);
+  res.status(404).json({ 
+    error: {
+      message: `Route ${req.method} ${req.path} not found`,
+      availableEndpoints: ['/api/decompose', '/api/validate', '/api/clarify', '/api/health', '/api/test']
+    }
+  });
+});
 
 // MongoDB connection
 const mongoUri = process.env.MONGODB_URI;
