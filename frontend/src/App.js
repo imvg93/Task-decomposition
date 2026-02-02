@@ -26,21 +26,14 @@ function App() {
     setResult(null);
 
     try {
-      // Determine API URL based on environment
-      // In development, use localhost:5000, in production use relative path
-      let apiUrl;
-      if (process.env.REACT_APP_API_URL) {
-        apiUrl = process.env.REACT_APP_API_URL;
-      } else if (process.env.NODE_ENV === 'development') {
-        apiUrl = 'http://localhost:5000/api';
-      } else {
-        apiUrl = '/api';
-      }
-      
-      console.log('Making request to:', `${apiUrl}/decompose`);
+      // API URL configuration - uses environment variable or defaults to backend URL
+      const API_URL = process.env.REACT_APP_API_URL || 'https://task-decomposition-1.onrender.com';
+
+      console.log('Using API URL:', API_URL);
+      console.log('Making request to:', `${API_URL}/api/decompose`);
       console.log('Request payload:', { description, constraints });
-      
-      const response = await axios.post(`${apiUrl}/decompose`, {
+
+      const response = await axios.post(`${API_URL}/api/decompose`, {
         description,
         constraints,
       }, {
