@@ -1,0 +1,213 @@
+.task-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+  animation: slideIn 0.5s ease-out both;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-card:hover::before {
+  transform: scaleY(1);
+}
+
+.task-card:hover {
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+  transform: translateY(-4px) scale(1.01);
+  border-color: #667eea;
+}
+
+.task-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.task-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.task-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.task-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.task-card:nth-child(n+5) {
+  animation-delay: 0.5s;
+}
+
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.task-id {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+  text-transform: uppercase;
+}
+
+.task-category {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 1px solid #e2e8f0;
+}
+
+.task-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.02em;
+}
+
+.badge-hours {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.badge-priority {
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.task-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.task-description {
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  font-weight: 400;
+}
+
+.task-dependencies,
+.task-ambiguity {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.task-dependencies strong,
+.task-ambiguity strong {
+  display: block;
+  font-size: 0.6875rem;
+  color: #475569;
+  margin-bottom: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dependencies-list,
+.ambiguity-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.dependency-badge {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  cursor: help;
+  border: 1px solid #93c5fd;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(30, 64, 175, 0.1);
+}
+
+.dependency-badge:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.2);
+}
+
+.ambiguity-badge {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid #fbbf24;
+  box-shadow: 0 1px 2px rgba(146, 64, 14, 0.1);
+  transition: all 0.2s ease;
+}
+
+.ambiguity-badge:hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(146, 64, 14, 0.2);
+}
+
+@media (max-width: 768px) {
+  .task-card {
+    padding: 16px;
+  }
+
+  .task-title {
+    font-size: 1.25rem;
+  }
+}
