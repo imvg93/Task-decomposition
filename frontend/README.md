@@ -1,18 +1,18 @@
 # Frontend Directory
 
-⚠️ **IMPORTANT**: The React app is located in `frontend/frontend/`, not `frontend/`
+The React app is located in `frontend/`
 
-## Correct Commands:
+## Commands:
 
 ### Start Development Server:
 ```bash
-cd frontend/frontend
+cd frontend
 npm start
 ```
 
 ### Create Production Build:
 ```bash
-cd frontend/frontend
+cd frontend
 npm run build
 ```
 
@@ -20,16 +20,16 @@ npm run build
 
 ```bash
 # Start dev server
-cd frontend\frontend
+cd frontend
 npm start
 
 # Or in one line (PowerShell):
-cd frontend\frontend; npm start
+cd frontend; npm start
 
 # Build for production
-cd frontend\frontend
+cd frontend
 npm run build
 
 # Or in one line (PowerShell):
-cd frontend\frontend; npm run build
+cd frontend; npm run build
 ```
