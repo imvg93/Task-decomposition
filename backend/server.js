@@ -18,6 +18,11 @@ app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Task Decomposition API is running' });
 });
 
+// Favicon handler to prevent browser 404 logs
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
 // API routes
 app.use('/api', apiRoutes);
 
