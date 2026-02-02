@@ -26,12 +26,16 @@ function App() {
     setResult(null);
 
     try {
-      // API URL configuration - uses environment variable or defaults to backend URL
-      const API_URL = process.env.REACT_APP_API_URL || 'https://task-decomposition-1.onrender.com';
+      // API URL: env override, or localhost in dev, or deployed backend in production
+      const API_URL =
+        process.env.REACT_APP_API_URL ||
+        (process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : 'https://task-decomposition-1.onrender.com');
 
-      console.log('Using API URL:', API_URL);
-      console.log('Making request to:', `${API_URL}/api/decompose`);
-      console.log('Request payload:', { description, constraints });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Using API URL:', API_URL);
+        console.log('Making request to:', `${API_URL}/api/decompose`);
+        console.log('Request payload:', { description, constraints });
+      }
 
       const response = await axios.post(`${API_URL}/api/decompose`, {
         description,
@@ -44,9 +48,11 @@ function App() {
       });
 
       const data = response.data;
-      console.log('Response status:', response.status);
-      console.log('Response received:', data);
-      console.log('Has tasks?', Array.isArray(data?.tasks));
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Response status:', response.status);
+        console.log('Response received:', data);
+        console.log('Has tasks?', Array.isArray(data?.tasks));
+      }
 
       if (data?.error) {
         const msg = data.error.message || data.error.details || 'Server returned an error';
@@ -55,14 +61,28 @@ function App() {
       if (data && Array.isArray(data.tasks)) {
         setResult(data);
       } else {
+        // Backend often returns HTML (e.g. "Application is starting...") on cold start
+        const isLikelyColdStart =
+          typeof data === 'string' &&
+          (data.includes('<') ||
+            /starting|waking|please wait|render\.com/i.test(data));
+        if (isLikelyColdStart) {
+          throw new Error(
+            'Backend is waking up (cold start). Please wait 30–60 seconds and try again.'
+          );
+        }
         const got = data === undefined || data === null ? 'empty' : typeof data;
-        throw new Error(`Invalid response format from server (got ${got}). Backend may still be starting up—try again in a moment.`);
+        throw new Error(
+          `Invalid response format from server (got ${got}). Backend may still be starting up—try again in a moment.`
+        );
       }
     } catch (err) {
-      console.error('Decomposition error:', err);
-      console.error('Error response:', err.response?.data);
-      console.error('Error status:', err.response?.status);
-      
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Decomposition error:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+      }
+
       let errorMessage = 'Failed to decompose project. ';
       
       if (err.response) {

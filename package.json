@@ -1,12 +1,13 @@
 {
   "name": "task-decomposition-engine",
   "version": "1.0.0",
-  "description": "AI-Powered Task Decomposition Engine",
+  "description": "Rule-based Task Decomposition Engine — structured tasks, dependencies, feasibility",
   "main": "api/index.js",
   "scripts": {
     "start": "node backend/server.js",
     "dev": "cd backend && npm run dev",
-    "build": "cd frontend && npm install && npm run build"
+    "build": "cd frontend && npm install && npm run build",
+    "test": "cd backend && npm test"
   },
   "dependencies": {
     "cors": "^2.8.6",
