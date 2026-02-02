@@ -42,13 +42,21 @@ function App() {
         },
         timeout: 30000, // 30 second timeout
       });
-      
-      console.log('Response received:', response.data);
-      
-      if (response.data && response.data.tasks) {
-        setResult(response.data);
+
+      const data = response.data;
+      console.log('Response status:', response.status);
+      console.log('Response received:', data);
+      console.log('Has tasks?', Array.isArray(data?.tasks));
+
+      if (data?.error) {
+        const msg = data.error.message || data.error.details || 'Server returned an error';
+        throw new Error(msg);
+      }
+      if (data && Array.isArray(data.tasks)) {
+        setResult(data);
       } else {
-        throw new Error('Invalid response format from server');
+        const got = data === undefined || data === null ? 'empty' : typeof data;
+        throw new Error(`Invalid response format from server (got ${got}). Backend may still be starting up—try again in a moment.`);
       }
     } catch (err) {
       console.error('Decomposition error:', err);

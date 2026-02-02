@@ -1,144 +1,225 @@
 # APPROACH.md
 
-## Project Overview
-The Task Decomposition Engine takes a natural language project description and turns it into a structured execution plan. It decomposes the description into tasks, analyzes dependencies between those tasks, detects contradictions and ambiguities in the requirements, and calculates feasibility based on time and team constraints. The goal is to give an engineering team a realistic, dependency-aware roadmap from a high-level idea.
+## 1. Overview
 
-## How I Approached the Logic Problems
+This project implements a **rule-based Task Decomposition Engine** that converts messy, human-written project descriptions into structured, executable task plans. The system focuses on *explainability, determinism, and correctness* rather than probabilistic or black-box AI behavior.
 
-### 1. Dependency Graph Resolution
-For dependency analysis, I treated tasks and their dependencies as a directed graph where each node is a task and edges point from a task to the tasks it depends on.
+The engine:
 
-- Depth-First Search (DFS) with a recursion stack was used for circular dependency detection. The recursion stack lets the algorithm detect back-edges, which directly correspond to cycles in a directed graph.
-- Topological sorting was used for critical path calculation. By processing tasks in an order that respects dependencies, I can compute earliest start times and determine the longest end-to-end path.
-- An adjacency list representation was chosen for the dependency graph because it is memory-efficient and works well with sparse graphs, which is typical for task dependency structures.
-- These algorithms are standard for DAG operations and provide good time complexity (O(V + E)) while being straightforward to reason about and debug.
+* Decomposes a project description into atomic tasks
+* Resolves explicit and implicit dependencies
+* Detects contradictions and ambiguities
+* Calculates feasibility under time and team constraints
 
-### 2. Contradiction Detection
-For contradiction detection, I used a rule-based approach instead of heavy NLP:
+The primary goal is to simulate how an experienced engineer reasons about unclear requirements in real-world project planning.
 
-- Regex patterns were used to detect conflicting keyword groups in the description (e.g., `simple|basic` vs. `premium|luxury`, tight timeline phrases vs. large scope phrases, budget constraints vs. high-quality expectations).
-- I defined explicit rules for common contradictions so that each conflict type is explainable and debuggable, such as “simplicity vs premium,” “timeline vs scope,” and “budget vs quality.”
-- I chose regex over NLP libraries to keep the solution fast, dependency-free, and easy to run in a constrained environment. This keeps the behavior deterministic and avoids the overhead of additional language models.
+---
 
-### 3. Ambiguity Scoring
-For ambiguity and clarity, I used a heuristic, keyword-based approach:
+## 2. Core Design Philosophy
 
-- Vague terms like “good,” “nice,” “fast,” and “user-friendly” are treated as signals of low clarity in the requirements.
-- The presence of more concrete details (numbers, timeframes, explicit metrics) conceptually implies a higher clarity score, even if the current implementation focuses primarily on flagging vague terms.
-- The trade-off is intentional: the heuristic is simple, explainable, and effective for common cases, even though it will not capture all nuanced forms of ambiguity that a more advanced semantic model might detect.
+From the beginning, I treated this assessment as a **systems and logic problem**, not an NLP or machine-learning problem. The requirements explicitly disallow AI APIs in production and emphasize dependency graphs, edge cases, and trade-offs.
 
-### 4. Feasibility Calculator
-The feasibility calculator estimates how realistic a plan is given the team and timeline:
+Key principles guiding the design:
 
-- The base formula uses the ratio \((\text{teamSize} \times \text{hoursPerDay} \times \text{deadlineDays}) / \text{totalTaskHours}\) to approximate whether available capacity covers the estimated effort.
-- A complexity penalty is applied based on dependency density (average number of dependencies per task). More dependencies imply more coordination overhead, communication, and sequencing constraints.
-- This penalty reduces the feasibility score for highly interconnected task graphs, which better reflects real-world execution risk where dense dependency networks slow teams down.
+* **Deterministic behavior** over probabilistic guesses
+* **Explainable logic** over opaque intelligence
+* **Rule-based heuristics** that can be audited and extended
+* **Separation of concerns** between parsing, analysis, and validation
 
-## AI Tool Usage
+---
 
-### What I Used Cursor For
-- Project structure scaffolding (backend folders, basic file layout).
-- Boilerplate code generation such as Express route setup and Mongoose model definitions.
-- Starting points for algorithm implementations (DFS, graph traversal, and service skeletons).
-- High-level React component and API wiring structure (where applicable).
+## 3. Task Decomposition Strategy
 
-### Prompts That Helped
-Examples of prompts I used:
-- “Create a DFS algorithm for cycle detection with recursion stack tracking.”
-- “Build Express API routes for task decomposition with proper error handling.”
-- “Generate Mongoose schemas for Task and Pattern models with validation.”
-- “Implement a critical path calculation for a task dependency graph.”
-- “Design a feasibility scoring function based on team size, hours per day, and deadline.”
+### 3.1 Pattern-Driven Task Generation
 
-### What I Accepted vs. Modified
+Task generation is driven by predefined decomposition templates (e.g., ecommerce, authentication, payments). Each template defines:
 
-**Accepted:**
-- Express server setup and middleware configuration (CORS, JSON parsing, error handling).
-- Mongoose schema definitions for `Task` and `Pattern` models, including timestamps.
-- Basic React/API structure where generated.
-- API route structure for `/api/decompose`, `/api/validate`, and `/api/clarify`.
+* Canonical tasks
+* Default dependencies
+* Estimated effort
+* Task category
 
-**Modified/Verified:**
-- DFS algorithm logic for cycle detection was reviewed and verified manually to ensure correct handling of recursion stacks and cycle paths.
-- Pattern matching rules in the pattern library were customized to reflect realistic ecommerce, auth, and payment task breakdowns.
-- The feasibility calculation formula was adjusted to apply the complexity penalty correctly and cap scores after the penalty.
-- Implicit dependency rules were refined to capture domain-specific relationships (e.g., payments depending on auth and cart).
+The project description is scanned using keyword and phrase matching to select applicable templates. This avoids brittle free-text parsing while still supporting common real-world project types.
 
-**Rejected:**
-- Initial suggestions to integrate external AI APIs were not used, in line with the assessment requirements.
-- Overly complex NLP or ML libraries were avoided in favor of regex-based approaches for simplicity and transparency.
-- External graph libraries were not used; graph algorithms (DFS, topological reasoning, CPM-style critical path) were implemented directly for full control and clearer evaluation.
+### 3.2 Implicit Dependency Inference
 
-## Trade-offs Made
+Certain features imply prerequisite work even when not explicitly stated. For example:
 
-1. **Regex vs. NLP**  
-   - **Pro:** Faster, no heavy dependencies, easy to deploy and reason about, sufficient for straightforward keyword-based contradiction and ambiguity detection.  
-   - **Con:** Less flexible for nuanced natural language or phrases that imply contradictions without explicit keywords.
+* Payments → authentication, cart, order model
+* Order history → database schema and user context
 
-2. **Hardcoded patterns vs. Machine Learning**  
-   - **Pro:** Predictable behavior, highly debuggable, and immediately useful for known project types like ecommerce, auth, and payments.  
-   - **Con:** Requires manual updates when new domains or project types are introduced; does not generalize automatically.
+These relationships are encoded as explicit rules and injected automatically into the task graph. This ensures the output reflects realistic execution requirements.
 
-3. **Simple ambiguity detection**  
-   - **Pro:** Uses basic keyword scanning, which is fast and easy to understand; fits well with the rest of the rule-based design.  
-   - **Con:** May miss subtler forms of ambiguity and context-dependent issues that a more advanced semantic model could detect.
+---
 
-4. **In-memory pattern matching**  
-   - **Pro:** Keeping patterns in code gives very fast access and makes iteration during development straightforward.  
-   - **Con:** For production scalability and multi-tenant systems, these patterns would ideally live in a database with tooling for non-developers to manage them.
+## 4. Dependency Graph Resolution
 
-## What I'd Improve With More Time
+Tasks and dependencies are modeled as a **directed graph**, where:
 
-1. **Machine Learning Integration**  
-   Train a model on real project descriptions to improve pattern matching, task suggestions, and dependency inference beyond hardcoded rules.
+* Nodes represent tasks
+* Directed edges represent dependency relationships
 
-2. **Advanced NLP**  
-   Use NLP libraries to extract entities, relationships, and intent from descriptions, improving both ambiguity detection and contradiction detection.
+### 4.1 Cycle Detection
 
-3. **Graph Visualization**  
-   Add a visual representation of the task graph and critical path to help users understand sequencing, bottlenecks, and parallelization opportunities.
+* Implemented using **Depth-First Search (DFS)** with a recursion stack
+* Back-edges are used to detect circular dependencies
+* When a cycle is found, the system reports the cycle path and suggests breaking the weakest or least critical dependency
 
-4. **Database-Driven Patterns**  
-   Move the pattern library to MongoDB with an admin UI so product owners or tech leads can curate and extend patterns without code changes.
+This approach provides O(V + E) time complexity and clear diagnostics.
 
-5. **More Test Coverage**  
-   Add comprehensive unit tests for each service (decomposition, dependency, feasibility, clarification) and systematic edge case testing.
+### 4.2 Critical Path Calculation
 
-6. **Deadline Parsing**  
-   Implement more robust date/time and phrase parsing (e.g., “next Friday,” “end of month,” “Q3”) for more accurate timeline interpretation.
+* Tasks are processed in dependency-respecting order
+* Earliest start and finish times are computed
+* The longest dependency chain is identified as the **critical path**
 
-7. **Real-time Validation**  
-   Introduce WebSocket-based validation so users get live feedback on feasibility, dependencies, and ambiguities as they type.
+This allows the system to reason about timeline feasibility and sequencing constraints.
 
-8. **Priority Scoring**  
-   Add ML-based or rule-based priority scoring to rank tasks based on impact, risk, and constraints for better roadmap planning.
+### 4.3 Parallelization Analysis
 
-## Challenges Faced
+Tasks without mutual dependencies are identified as parallelizable. This information feeds into feasibility analysis and resource conflict detection.
 
-1. **Dependency ID Mapping**  
-   The initial implementation struggled to map pattern-level task IDs to generated runtime task IDs, which affected dependency resolution. This was corrected by introducing a dedicated ID mapping layer that translates pattern IDs into generated IDs before dependency linking.
+---
 
-2. **Critical Path Algorithm**  
-   The first version used DFS in the dependency direction, which did not accurately reflect execution order. It was refactored to a proper Critical Path Method implementation using a reverse graph and earliest start time calculation.
+## 5. Contradiction Detection
 
-3. **Feasibility Edge Cases**  
-   Handling scenarios where available hours greatly exceeded or fell short of required hours required careful capping and penalty application to keep the score between 0 and 1 while still being meaningful.
+Contradictions are detected using **explicit, rule-based checks** rather than semantic inference.
 
-## Testing Strategy
+Examples include:
 
-I validated the behavior primarily through focused scenarios rather than a full automated test suite:
+* “Simple” vs “Premium”
+* “Fast delivery” vs “Large scope”
+* “Low budget” vs “High quality”
+* “Mobile-first” vs desktop-heavy interaction patterns
 
-1. **Circular Dependency Detection**  
-   Created task sets with known cycles to verify that the DFS with recursion stack correctly identifies cycles and returns the cycle path.
+Each contradiction:
 
-2. **Impossible Timeline Scenarios**  
-   Used descriptions and constraints where total estimated hours far exceeded available capacity to ensure the feasibility score dropped appropriately and warnings were generated.
+* Is clearly explained
+* Includes a practical resolution suggestion
 
-3. **Vague Requirements Handling**  
-   Tested descriptions containing multiple vague terms to verify that ambiguity flags and clarifying questions were generated as expected.
+This mirrors how technical leads communicate trade-offs to stakeholders.
 
-4. **Hidden Dependency Inference**  
-   Crafted ecommerce and payment scenarios to confirm that implicit dependencies (e.g., payments → auth + cart) were added correctly on top of explicit ones.
+---
 
-In addition, I manually exercised each API endpoint (decompose, validate, clarify) with `curl`-style HTTP requests to confirm request validation, error handling, and response structure. This combination of scenario-based testing and manual verification was sufficient to gain confidence in the core logic within the constraints of the assessment.
+## 6. Ambiguity Analysis and Clarification
 
+Ambiguity is handled through a **clarity scoring heuristic**:
+
+* Vague terms (e.g., *fast*, *user-friendly*, *make it pop*) are assigned low clarity scores
+* Measurable or explicit requirements imply higher clarity
+
+For each ambiguous signal, the system generates a targeted clarifying question, converting subjective language into actionable requirements.
+
+This keeps the system useful even when input quality is poor.
+
+---
+
+## 7. Feasibility Calculation
+
+Feasibility is computed by comparing estimated effort against available capacity:
+
+```
+(teamSize × hoursPerDay × availableDays) / totalEstimatedTaskHours
+```
+
+Adjustments are applied for:
+
+* Dependency density (coordination overhead)
+* Aggressive timelines
+* Small team sizes
+
+The final feasibility score is normalized between 0 and 1 and accompanied by warnings when risk is high.
+
+---
+
+## 8. API Design
+
+The system exposes three focused endpoints:
+
+* **POST /api/decompose** – Generates tasks, dependencies, conflicts, and feasibility
+* **POST /api/validate** – Validates an existing task list for cycles, timeline issues, and resource conflicts
+* **POST /api/clarify** – Generates clarifying questions for ambiguous descriptions
+
+Each endpoint performs one responsibility and returns structured, predictable responses.
+
+---
+
+## 9. Use of AI Tools
+
+AI tools (Cursor) were used selectively and intentionally:
+
+### Used for:
+
+* Project scaffolding and boilerplate
+* Initial algorithm skeletons (DFS, graph traversal)
+* Express route and middleware setup
+
+### Not used for:
+
+* Core logic design
+* Dependency rules
+* Feasibility or contradiction reasoning
+
+All generated logic was manually reviewed, verified, and adapted to meet assessment constraints.
+
+---
+
+## 10. Trade-offs Made
+
+1. **Rule-based logic vs NLP/ML**
+
+   * ✔ Predictable, explainable, fast
+   * ✘ Limited semantic flexibility
+
+2. **Hardcoded patterns vs learned models**
+
+   * ✔ Deterministic behavior, easy debugging
+   * ✘ Manual expansion required for new domains
+
+3. **Heuristic ambiguity scoring**
+
+   * ✔ Simple and effective for common cases
+   * ✘ Does not capture nuanced intent
+
+These trade-offs were intentional and aligned with the problem constraints.
+
+---
+
+## 11. Testing Strategy
+
+Testing focused on high-signal scenarios rather than exhaustive automation:
+
+* Circular dependency detection
+* Impossible timelines
+* Vague and contradictory requirements
+* Hidden dependency inference
+
+Each API was exercised using manual HTTP requests to validate correctness, error handling, and response structure.
+
+---
+
+## 12. Challenges Faced
+
+* Mapping template-level task identifiers to runtime task IDs
+* Correctly implementing critical path logic instead of naive DFS depth
+* Balancing feasibility scoring to remain meaningful across extremes
+
+These issues were resolved through iterative refinement and focused testing.
+
+---
+
+## 13. Future Improvements
+
+With more time, the system could be extended with:
+
+* Database-managed pattern libraries
+* Richer ambiguity scoring
+* Visual dependency graphs
+* More robust deadline parsing
+* Expanded automated test coverage
+
+---
+
+## Final Note
+
+This project is intentionally designed to reflect how engineers reason about incomplete and conflicting requirements: through structure, explicit trade-offs, and transparent logic rather than opaque intelligence.
